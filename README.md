@@ -104,6 +104,8 @@ Refer to Google Drive (Matroid interns 2023 / Video object detection) for checkp
 ### Dataset preparation
 Place CBP video frame data and single image data in path/to/data/directory. Also place annotation files for CBP video frame data and single image data in path/to/data/directory. Annotation files should be in COCO format with added video id and frame id information. Refer to CBP_coco_train.json, train_DET.json for example format of video data and single image data respectively. 
 
+MAKE SURE that the validation set has annotations for every frame.
+
 In the file datasets/vid_single.py, make sure the variable PATHS (at the bottom of the file) contains the correct names of the annotations files. 
 
 Also in the file datasets/vid_multi.py, make sure the variable PATHS (at the bottom of the file) contains the correct names of the annotations files. 
