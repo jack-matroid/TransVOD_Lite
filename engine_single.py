@@ -113,6 +113,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             output_dir=os.path.join(output_dir, "panoptic_eval"),
         )
     iter_ = 0
+    overall_result = {}
     for samples, targets in metric_logger.log_every(data_loader, 10, header):
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -142,10 +143,9 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             coco_evaluator.update(res)
 
         ############################################################################################
-        # LOG PREDICTION IMAGE TO WANDB TODO PRIY
+        # LOG PREDICTION IMAGE TO WANDB Priy
         ############################################################################################
-        if iter_ == 20:
-            img_id_= targets[0]['image_id'].item()
+        for img_id_ in res.keys():
             boxes = res[img_id_]['boxes']
             labels = res[img_id_]['labels']
             scores = res[img_id_]['scores'] 
@@ -154,7 +154,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             scores = scores[labels!=0]
             labels = labels[labels!=0]
 
-            THRESHOLD = 0.25
+            THRESHOLD = 0.10
 
             boxes = boxes[scores>=THRESHOLD]
             labels = labels[scores>=THRESHOLD]
@@ -165,19 +165,15 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             import PIL
             img_pil = PIL.Image.open(os.path.join(data_root, file_name))
             width, height = img_pil.size
-
-            boxes_wandb = {"predictions": {'box_data': [{'position': 
-                                                         {"minX": 1.*(box[0].to(torch.float32).item())/width, 
-                                                          'maxX': 1.*(box[2].to(torch.float32).item())/width, 
-                                                          'minY': 1.*(box[1].to(torch.float32).item())/height, 
-                                                          'maxY': 1.*(box[3].to(torch.float32).item())/height}, 
-                                                          "class_id": int(labels[i].item()),
-                                                          "box_caption": f"score: {round(1.*scores[i].to(torch.float32).item(), 3)}, class: {base_ds.loadCats([int(labels[i].item())])[0]['name']}"
-                                                          } for i, box in enumerate(boxes)]}}
-
-            # print(boxes_wandb)
-            img_wandb = wandb.Image(img_pil, boxes=boxes_wandb)
-            wandb.log({'test image': img_wandb})
+            overall_result[img_id_] = {"predictions": {'box_data': [{'position': 
+                                                            {"xmin": 1.*(box[0].to(torch.float32).item())/width, 
+                                                            'xmax': 1.*(box[2].to(torch.float32).item())/width, 
+                                                            'ymin': 1.*(box[1].to(torch.float32).item())/height, 
+                                                            'ymax': 1.*(box[3].to(torch.float32).item())/height}, 
+                                                            "class_id": int(labels[i].item()),
+                                                            "score": round(1.*scores[i].to(torch.float32).item(), 3),
+                                                            "box_caption": f"score: {round(1.*scores[i].to(torch.float32).item(), 3)}, class: {base_ds.loadCats([int(labels[i].item())])[0]['name']}"
+                                                            } for i, box in enumerate(boxes)]}}
         iter_ += 1
         ############################################################################################
         ############################################################################################
@@ -217,4 +213,4 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         stats['PQ_all'] = panoptic_res["All"]
         stats['PQ_th'] = panoptic_res["Things"]
         stats['PQ_st'] = panoptic_res["Stuff"]
-    return stats, coco_evaluator
+    return stats, coco_evaluator, overall_result

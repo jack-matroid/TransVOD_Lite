@@ -6,7 +6,6 @@ import torch
 torch.cuda.empty_cache()
 
 
-
 command_list = [
                 "python", "./main.py",
                 "--backbone", "swin_b_p4w7",

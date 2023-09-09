@@ -8,7 +8,6 @@ torch.cuda.empty_cache()
 
 command_list = [
     "python", "./main.py",
-    # "--pretrainedmodel", "./pretrained_checkpoints/checkpoint0005.pth",            
     "--backbone", "swin_b_p4w7",
     "--epochs", "35",
     "--num_feature_levels", "1", 
@@ -16,7 +15,6 @@ command_list = [
     "--hidden_dim", "256",
     "--dilation",
     "--batch_size", "4", 
-    # "--num_ref_frames", "2", 
     "--num_classes", "4",
     "--img_side", "600", 
     "--resume" , "/home/ubuntu/priy_dev/TransVOD/TransVOD_Lite/pretrained/single/checkpoint0006.pth",
@@ -27,7 +25,6 @@ command_list = [
     "--dataset_file", "vid_single",
     "--output_dir", "./experiments/UAV_single_vid_id_15/" ,
     "--data_root", "/home/ubuntu/priy_dev/Datasets/UAV",
-    # "--freeze_backbone",
             ]
 
 

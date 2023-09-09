@@ -145,7 +145,7 @@ def get_args_parser():
 
 
 def main(args):
-    wandb.init(project="TransVOD_lite_multi_UAV_real", name='_'.join(args.output_dir.split('/')))
+    wandb.init(project="Matroid Handoff Testing", name='_'.join(args.output_dir.split('/')))
     print(args.dataset_file, 11111111)
     if args.dataset_file == "vid_single":
         from engine_single import evaluate, train_one_epoch
@@ -240,10 +240,7 @@ def main(args):
                                       weight_decay=args.weight_decay)
     print(args.lr_drop_epochs)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, args.lr_drop_epochs)
-    # if args.lr_warmup:
-    #     print('using learning rate warmup')
-    #     lr_scheduler = create_lr_scheduler_with_warmup(lr_scheduler, warmup_start_value=args.lr/(10**2), warmup_end_value=args.lr, warmup_duration=2)
-
+    
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
@@ -317,32 +314,6 @@ def main(args):
 
         return
         
-    # cocoDt = coco_evaluator.coco_eval['bbox'].cocoDt
-    # cocoGt = coco_evaluator.coco_eval['bbox'].cocoGt
-
-    # ################## COCO EVAL STATs ######################
-    # # stats = np.zeros((14,))
-    # #         stats[0] = _summarize(1)
-    # #         stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[2])
-
-    # #        
-    # #         stats[12] = _summarize(1, iouThr=.5, areaRng='small', maxDets=self.params.maxDets[2])
-    # #         stats[13] = _summarize(1, iouThr=.5, areaRng='extra_small', maxDets=self.params.maxDets[2])
-
-    # #         stats[2] = _summarize(1, iouThr=.75, maxDets=self.params.maxDets[2])
-    # #         stats[3] = _summarize(1, areaRng='small', maxDets=self.params.maxDets[2])
-    # #         stats[4] = _summarize(1, areaRng='medium', maxDets=self.params.maxDets[2])
-    # #         stats[5] = _summarize(1, areaRng='large', maxDets=self.params.maxDets[2])
-    # #         stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
-    # #         stats[7] = _summarize(0, maxDets=self.params.maxDets[1])
-    # #         stats[8] = _summarize(0, maxDets=self.params.maxDets[2])
-    # #         stats[9] = _summarize(0, areaRng='small', maxDets=self.params.maxDets[2])
-    # #         stats[10] = _summarize(0, areaRng='medium', maxDets=self.params.maxDets[2])
-    # #         stats[11] = _summarize(0, areaRng='large', maxDets=self.params.maxDets[2])
-
-    # map_50_small = coco_evaluator.coco_eval['bbox'].stats[12]
-    # map_50_extra_small = coco_evaluator.coco_eval['bbox'].stats[13]
-
 
     print("Start training")
     start_time = time.time()

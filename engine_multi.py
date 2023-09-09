@@ -96,12 +96,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(class_error=loss_dict_reduced['class_error'])
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
-        # try:
-        #     metric_logger.update(grad_norm=grad_total_norm)
-        # except:
-        #     grad_total_norm_noclip = utils.get_total_grad_norm(model.parameters(), max_norm)
-        #     metric_logger.update(grad_norm=grad_total_norm_noclip)
-
         iter += 1
         # samples, ref_samples, targets = prefetcher.next()
         # try: 
@@ -169,7 +163,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             coco_evaluator.update(res)
         
         ############################################################################################
-        # LOG PREDICTION IMAGE TO WANDB TODO PRIY
+        # LOG PREDICTION IMAGE TO WANDB Priy
         ############################################################################################
         for img_id_ in res.keys():
             boxes = res[img_id_]['boxes']
@@ -202,74 +196,6 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
                                                             } for i, box in enumerate(boxes)]}}
 
 
-        # if iter_ == 0:
-
-        #     THRESHOLD = 0.25
-
-        #     boxes = boxes[scores>=THRESHOLD]
-        #     labels = labels[scores>=THRESHOLD]
-        #     scores = scores[scores>=THRESHOLD]
-
-        #     boxes_wandb = {"predictions": {'box_data': [{'position': 
-        #                                                  {"minX": 1.*(box[0].to(torch.float32).item())/width, 
-        #                                                   'maxX': 1.*(box[2].to(torch.float32).item())/width, 
-        #                                                   'minY': 1.*(box[1].to(torch.float32).item())/height, 
-        #                                                   'maxY': 1.*(box[3].to(torch.float32).item())/height}, 
-        #                                                   "class_id": int(labels[i].item()),
-        #                                                   "box_caption": f"score: {round(1.*scores[i].to(torch.float32).item(), 3)}, class: {base_ds.loadCats([int(labels[i].item())])[0]['name']}"
-        #                                                   } for i, box in enumerate(boxes)]}}
-
-        #     # print(boxes_wandb)
-        #     img_wandb = wandb.Image(img_pil, boxes=boxes_wandb)
-        #     wandb.log({'test image': img_wandb})
-        # iter_ += 1
-        ############################################################################################
-        ############################################################################################
-        
-        # ############################################################################################
-        # # LOG PREDICTION IMAGE TO WANDB TODO PRIY
-        # ############################################################################################
-        # if iter_ == 1:
-        #     img_wandbs = []
-        #     for img_id in res.keys():
-        #         img_id_= img_id
-        #         boxes = res[img_id_]['boxes']
-        #         labels = res[img_id_]['labels']
-        #         scores = res[img_id_]['scores'] 
-
-        #         boxes = boxes[labels!=0]
-        #         scores = scores[labels!=0]
-        #         labels = labels[labels!=0]
-
-        #         THRESHOLD = 0.25
-
-        #         boxes = boxes[scores>=THRESHOLD]
-        #         labels = labels[scores>=THRESHOLD]
-        #         scores = scores[scores>=THRESHOLD]
-
-        #         img_info = base_ds.loadImgs([img_id_])[0]
-        #         file_name = img_info['file_name']
-        #         import PIL
-        #         img_pil = PIL.Image.open(os.path.join(data_root, file_name))
-        #         width, height = img_pil.size
-
-        #         boxes_wandb = {"predictions": {'box_data': [{'position': 
-        #                                                     {"minX": 1.*(box[0].to(torch.float32).item())/width, 
-        #                                                     'maxX': 1.*(box[2].to(torch.float32).item())/width, 
-        #                                                     'minY': 1.*(box[1].to(torch.float32).item())/height, 
-        #                                                     'maxY': 1.*(box[3].to(torch.float32).item())/height}, 
-        #                                                     "class_id": int(labels[i].item()),
-        #                                                     "box_caption": f"score: {round(1.*scores[i].to(torch.float32).item(), 3)}, class: {base_ds.loadCats([int(labels[i].item())])[0]['name']}"
-        #                                                     } for i, box in enumerate(boxes)]}}
-
-        #         # print(boxes_wandb)
-        #         img_wandb = wandb.Image(img_pil, boxes=boxes_wandb)
-        #         img_wandbs.append(img_wandb)
-
-        #     wandb.log({'test image': img_wandbs})
-        # iter_ += 1
-        # ############################################################################################
-        # ############################################################################################
 
         if panoptic_evaluator is not None:
             res_pano = postprocessors["panoptic"](outputs, target_sizes, orig_target_sizes)

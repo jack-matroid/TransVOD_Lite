@@ -216,9 +216,15 @@ def build(image_set, args):
     #     "val": [(root / "Data" / "VID", root / "annotations" / 'imagenet_vid_val.json')],
     # }
 
+    # PATHS = {
+    #     "train_vid": [(root, os.path.join(root, 'UAV_train_every10.json'), True, os.path.join(root, 'UAV_train_every10_ignores.json'))],
+    #     "val": [(root, os.path.join(root, 'UAV_val_every10.json'), False, os.path.join(root, 'UAV_val_every10_ignores.json'))]
+    # }
+
+    
     PATHS = {
-        "train_vid": [(root, os.path.join(root, 'UAV_train_every10.json'), True, os.path.join(root, 'UAV_train_every10_ignores.json'))],
-        "val": [(root, os.path.join(root, 'UAV_val_every10.json'), False, os.path.join(root, 'UAV_val_every10_ignores.json'))]
+        "train_vid": [(root, os.path.join(root, 'VisDrone_VID_train_every10.json'), True), (root, os.path.join(root, 'VisDrone_DET_train.json'), True)],
+        "val": [(root, os.path.join(root, 'VisDrone_VID_val_allframe.json'), False)]
     }
 
     datasets = []
@@ -229,10 +235,6 @@ def build(image_set, args):
         return datasets[0]
     return ConcatDataset(datasets)
 
-    # PATHS = {
-    #     "train_vid": [(root, os.path.join(root, 'VisDrone_VID_train_every10.json'), True), (root, os.path.join(root, 'VisDrone_DET_train.json'), True)],
-    #     "val": [(root, os.path.join(root, 'VisDrone_VID_val_allframe.json'), False)]
-    # }
 
     # datasets = []
     # for (img_folder, ann_file, is_train) in PATHS[image_set]:
