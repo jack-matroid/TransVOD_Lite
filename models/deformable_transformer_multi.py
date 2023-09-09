@@ -226,7 +226,8 @@ class DeformableTransformer(nn.Module):
             last_reference_out  = inter_references_out[-1]
             #print("11", last_reference_out.shape)
             last_hs = hs[-1]
-            new_hs, last_reference_out = update_QFH(class_embed, last_hs, last_reference_out, 80)
+            new_hs, last_reference_out = update_QFH(class_embed, last_hs, last_reference_out, 80) # TODO
+            # new_hs, last_reference_out = update_QFH(class_embed, last_hs, last_reference_out, 80) # TODO
             new_hs_list = torch.chunk(new_hs, self.num_frames, dim = 0)
             new_hs = torch.cat(new_hs_list, 1) # 1, 300 * 4 , 128
             new_hs = self.temporal_query_layer1(new_hs, new_hs)
@@ -248,7 +249,8 @@ class DeformableTransformer(nn.Module):
 
             # loss: new_hs [4, 50, 128] 
             # self.temp_class_embed
-            new_hs, last_reference_out = update_QFH(temp_class_embed_list[0], new_hs, last_reference_out, 50)
+            # new_hs, last_reference_out = update_QFH(temp_class_embed_list[0], new_hs, last_reference_out, 50)
+            new_hs, last_reference_out = update_QFH(temp_class_embed_list[0], new_hs, last_reference_out, 50) # TODO Priy
             new_hs_list = torch.chunk(new_hs, self.num_frames, dim = 0)
             new_hs = torch.cat(new_hs_list, 1) #1, 30 * 4 ,128
             new_hs = self.temporal_query_layer2(new_hs, new_hs)
@@ -270,7 +272,8 @@ class DeformableTransformer(nn.Module):
             out['aux_outputs'].append({"pred_logits":output_class2, "pred_boxes":output_coord2})
             # loss: [4, 30, 128]
 
-            new_hs, last_reference_out = update_QFH(temp_class_embed_list[1], new_hs, last_reference_out, 30)
+            # new_hs, last_reference_out = update_QFH(temp_class_embed_list[1], new_hs, last_reference_out, 30)
+            new_hs, last_reference_out = update_QFH(temp_class_embed_list[1], new_hs, last_reference_out, 50) # TODO Priy
             new_hs_list = torch.chunk(new_hs, self.num_frames, dim = 0)
             new_hs = torch.cat(new_hs_list, 1)
             new_hs = self.temporal_query_layer3(new_hs, new_hs)

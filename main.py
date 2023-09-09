@@ -24,6 +24,8 @@ import datasets
 import datasets.samplers as samplers
 from datasets import build_dataset, get_coco_api_from_dataset
 from models import build_model
+import wandb
+import os
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Deformable DETR Detector', add_help=False)
@@ -39,6 +41,8 @@ def get_args_parser():
     parser.add_argument('--lr_drop_epochs', default=None, type=int, nargs='+')
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
+    parser.add_argument('--img_side', default=600, type=int)
+    parser.add_argument('--num_classes', type=int, required=True)
     
     parser.add_argument('--num_ref_frames', default=3, type=int, help='number of reference frames')
     parser.add_argument('--num_frames', default=4, type=int, help='number of reference frames')
@@ -115,6 +119,7 @@ def get_args_parser():
     parser.add_argument('--focal_alpha', default=0.25, type=float)
 
     # dataset parameters
+    parser.add_argument('--data_root')
     parser.add_argument('--dataset_file', default='vid_multi')
     parser.add_argument('--coco_path', default='./data/coco', type=str)
     parser.add_argument('--vid_path', default='./data/vid', type=str)
@@ -131,6 +136,8 @@ def get_args_parser():
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     parser.add_argument('--eval', action='store_true')
+    parser.add_argument('--lr_warmup', default=False, action='store_true')
+
     parser.add_argument('--num_workers', default=0, type=int)
     parser.add_argument('--cache_mode', default=False, action='store_true', help='whether to cache images on memory')
 
@@ -138,6 +145,7 @@ def get_args_parser():
 
 
 def main(args):
+    wandb.init(project="TransVOD_lite_multi_UAV_real", name='_'.join(args.output_dir.split('/')))
     print(args.dataset_file, 11111111)
     if args.dataset_file == "vid_single":
         from engine_single import evaluate, train_one_epoch
@@ -170,8 +178,10 @@ def main(args):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
 
-    dataset_train = build_dataset(image_set='train_joint', args=args)
+    dataset_train = build_dataset(image_set='train_vid', args=args)
     dataset_val = build_dataset(image_set='val', args=args)
+
+    
 
     if args.distributed:
         if args.cache_mode:
@@ -204,7 +214,7 @@ def main(args):
         return out
 
     for n, p in model_without_ddp.named_parameters():
-        print(n)
+        print(f"{n}{p.shape}")
 
     param_dicts = [
         {
@@ -230,6 +240,9 @@ def main(args):
                                       weight_decay=args.weight_decay)
     print(args.lr_drop_epochs)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, args.lr_drop_epochs)
+    # if args.lr_warmup:
+    #     print('using learning rate warmup')
+    #     lr_scheduler = create_lr_scheduler_with_warmup(lr_scheduler, warmup_start_value=args.lr/(10**2), warmup_end_value=args.lr, warmup_duration=2)
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
@@ -267,10 +280,10 @@ def main(args):
             else:
                 tmp_dict = checkpoint['model']
                 for name, param in model_without_ddp.named_parameters():
-	                if ('temp' in name):
-	                    param.requires_grad = True
-	                else:
-	                    param.requires_grad = False
+                    if ('temp' in name):
+                        param.requires_grad = True
+                    else:
+                        param.requires_grad = False
             missing_keys, unexpected_keys = model_without_ddp.load_state_dict(tmp_dict, strict=False)
 
         unexpected_keys = [k for k in unexpected_keys if not (k.endswith('total_params') or k.endswith('total_ops'))]
@@ -278,12 +291,58 @@ def main(args):
             print('Missing Keys: {}'.format(missing_keys))
         if len(unexpected_keys) > 0:
             print('Unexpected Keys: {}'.format(unexpected_keys))
+        
+        total_params_model = 0
+        total_params_with_grad = 0
+        for name, param in model_without_ddp.named_parameters():
+            if param.requires_grad:
+                total_params_with_grad += 1
+            total_params_model += 1
+        print("***************************************************************")
+        print(f"TOTAL PARAMS: {total_params_model}")
+        print(f"PARAMS WITH GRAD: {total_params_with_grad}")
+        print("***************************************************************")
+
     if args.eval:
-        test_stats, coco_evaluator = evaluate(model, criterion, postprocessors,
-                                              data_loader_val, base_ds, device, args.output_dir)
+        test_stats, coco_evaluator, overall_result = evaluate(model, criterion, postprocessors,
+                                              data_loader_val, base_ds, device, args.output_dir, args.data_root)
         if args.output_dir:
             utils.save_on_master(coco_evaluator.coco_eval["bbox"].eval, output_dir / "eval.pth")
+        
+        output_path = os.path.join(args.output_dir, f"final_predicitions_{'_'.join(args.output_dir.split('/'))}.json")
+        print('saving results')
+        with open(output_path, 'w') as json_file:
+            json.dump(overall_result, json_file)
+        print('done saving')
+
         return
+        
+    # cocoDt = coco_evaluator.coco_eval['bbox'].cocoDt
+    # cocoGt = coco_evaluator.coco_eval['bbox'].cocoGt
+
+    # ################## COCO EVAL STATs ######################
+    # # stats = np.zeros((14,))
+    # #         stats[0] = _summarize(1)
+    # #         stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[2])
+
+    # #        
+    # #         stats[12] = _summarize(1, iouThr=.5, areaRng='small', maxDets=self.params.maxDets[2])
+    # #         stats[13] = _summarize(1, iouThr=.5, areaRng='extra_small', maxDets=self.params.maxDets[2])
+
+    # #         stats[2] = _summarize(1, iouThr=.75, maxDets=self.params.maxDets[2])
+    # #         stats[3] = _summarize(1, areaRng='small', maxDets=self.params.maxDets[2])
+    # #         stats[4] = _summarize(1, areaRng='medium', maxDets=self.params.maxDets[2])
+    # #         stats[5] = _summarize(1, areaRng='large', maxDets=self.params.maxDets[2])
+    # #         stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
+    # #         stats[7] = _summarize(0, maxDets=self.params.maxDets[1])
+    # #         stats[8] = _summarize(0, maxDets=self.params.maxDets[2])
+    # #         stats[9] = _summarize(0, areaRng='small', maxDets=self.params.maxDets[2])
+    # #         stats[10] = _summarize(0, areaRng='medium', maxDets=self.params.maxDets[2])
+    # #         stats[11] = _summarize(0, areaRng='large', maxDets=self.params.maxDets[2])
+
+    # map_50_small = coco_evaluator.coco_eval['bbox'].stats[12]
+    # map_50_extra_small = coco_evaluator.coco_eval['bbox'].stats[13]
+
 
     print("Start training")
     start_time = time.time()
@@ -316,6 +375,24 @@ def main(args):
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch,
                      'n_parameters': n_parameters}
+        
+        if epoch%1==0:
+
+            test_stats, coco_evaluator = evaluate(model, criterion, postprocessors,
+                                              data_loader_val, base_ds, device, args.output_dir, args.data_root)
+            
+            map_50_small = coco_evaluator.coco_eval['bbox'].stats[12]
+            map_50_extra_small = coco_evaluator.coco_eval['bbox'].stats[13]
+        
+            wandb.log({"val_class_error": test_stats['class_error']})
+            wandb.log({"val_loss": test_stats['loss']})
+            wandb.log({"val_loss_ce": test_stats['loss_ce']})
+            wandb.log({"val_loss_bbox": test_stats['loss_bbox']})
+            wandb.log({"val_loss_giou": test_stats['loss_giou']})
+            wandb.log({"map50": test_stats['coco_eval_bbox'][1]})
+            wandb.log({"map50_small": map_50_small})
+            wandb.log({"map50_extra_small": map_50_extra_small})
+
 
         if args.output_dir and utils.is_main_process():
             with (output_dir / "log.txt").open("a") as f:

@@ -36,8 +36,8 @@ def build_dataset(image_set, args):
 
     if args.dataset_file == 'vid_single':
         return build_vid_single(image_set, args)
-    if args.dataset_file == "vid_multi":
+    if args.dataset_file == "vid_multi" and image_set!='val':
         return build_vid_multi(image_set, args)
-    if args.dataset_file == "vid_multi_eval":
+    if args.dataset_file == "vid_multi" and image_set=='val':
         return build_vid_multi_eval(image_set, args)
     raise ValueError(f'dataset {args.dataset_file} not supported')
