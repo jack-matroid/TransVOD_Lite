@@ -222,9 +222,14 @@ def build(image_set, args):
     # }
 
     
+    # PATHS = {
+    #     "train_vid": [(root, os.path.join(root, 'VisDrone_VID_train_every10.json'), True), (root, os.path.join(root, 'VisDrone_DET_train.json'), True)],
+    #     "val": [(root, os.path.join(root, 'VisDrone_VID_val_allframe.json'), False)]
+    # }
+
     PATHS = {
-        "train_vid": [(root, os.path.join(root, 'VisDrone_VID_train_every10.json'), True), (root, os.path.join(root, 'VisDrone_DET_train.json'), True)],
-        "val": [(root, os.path.join(root, 'VisDrone_VID_val_allframe.json'), False)]
+        "train_vid": [(root, os.path.join(root, 'CBP_coco_train.json'), True, None), (root, os.path.join(root, 'train_DET.json'), True, None)],
+        "val": [(root, os.path.join(root, 'CBP_coco_val.json'), True, None)]
     }
 
     datasets = []

@@ -292,9 +292,8 @@ def build(image_set, args):
     #     "val": [(root / "Data" / "VID", root / "annotations" / 'imagenet_vid_val.json')],
     # }
     PATHS = {
-        # "train_vid": [(root, os.path.join(root, 'VisDrone_VID_train_every10.json'), True)],
-        "train_vid": [(root, os.path.join(root, 'VisDrone_VID_train_every10.json'), True, None)],
-        "val": [(root, os.path.join(root, 'VisDrone_VID_val_allframe.json'), False, None)]
+        "train_vid": [(root, os.path.join(root, 'CBP_coco_train.json'), True, None), (root, os.path.join(root, 'train_DET.json'), True, None)],
+        "val": [(root, os.path.join(root, 'CBP_coco_val.json'), True, None)]
     }
     # PATHS = {
     #     "train_vid": [(root, os.path.join(root, 'UAV_train_every10.json'), True, os.path.join(root, 'UAV_train_every10_ignores.json'))],
